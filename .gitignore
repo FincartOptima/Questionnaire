@@ -1,0 +1,10 @@
+# Local scratch
+*.pyc
+__pycache__/
+.DS_Store
+node_modules/
+
+# Never commit a real secret. The shared secret lives in index.html and
+# Code.gs by necessity (see README §6) — but keep local test copies out.
+*.local.html
+*.local.gs
