@@ -564,7 +564,7 @@ const state = {
   name: "", email: "", mobile: "", consent: false,
   answers: Object.create(null),
   index: 0,
-  step: "gate",
+  step: "q0",
   gateShownAt: Date.now()
 };
 
@@ -594,15 +594,15 @@ function structureMarkup() {
 function renderGate() {
   state.step = "gate";
   state.gateShownAt = Date.now();
-  document.getElementById("colophonLeft").textContent = "Five questions \u00b7 about two minutes";
+  document.getElementById("colophonLeft").textContent = "One last step";
 
   const emailTag = CONFIG.emailRequired ? "" : ` <span class="opt-tag">(optional)</span>`;
 
   $stage.innerHTML = `
     <div class="wrap enter">
-      <p class="eyebrow">Questionnaire</p>
-      <h1>Your business runs on systems. Does your wealth?</h1>
-      <p class="lede">Five questions on how your assets, advisors and succession are actually structured. You\u2019ll get a score and a read on where the gaps are, immediately.</p>
+      <p class="eyebrow">One last step</p>
+      <h1>Your result is ready.</h1>
+      <p class="lede">Enter your details below and we\u2019ll show your score immediately.</p>
 
       <div class="card">
         <div class="field">
@@ -640,7 +640,7 @@ function renderGate() {
         <span class="err" id="eConsent" role="alert"></span>
 
         <div class="actions">
-          <button class="btn" id="btnStart" type="button">Begin the questionnaire <span class="arw" aria-hidden="true">&rarr;</span></button>
+          <button class="btn" id="btnStart" type="button">Show my result <span class="arw" aria-hidden="true">&rarr;</span></button>
         </div>
       </div>
 
@@ -712,7 +712,8 @@ function submitGate() {
   state.mobile = m.value;
   state.consent = true;
 
-  // Fire-and-forget partial capture, so an abandoned audit is still a lead.
+  // Fire-and-forget partial capture: if the "complete" save below fails or the
+  // tab closes before it resolves, we still have their contact details.
   void postToSheet({
     stage: "lead",
     sessionId: state.sessionId,
@@ -724,8 +725,7 @@ function submitGate() {
     clientTime: new Date().toISOString()
   });
 
-  state.index = 0;
-  renderQuestion();
+  renderResult();
 }
 
 /* ---- screen: question ---- */
@@ -734,7 +734,7 @@ function renderQuestion() {
   const q = QUESTIONS[state.index];
   const n = state.index + 1;
   const total = QUESTIONS.length;
-  document.getElementById("colophonLeft").textContent = `${state.name} \u00b7 question ${n} of ${total}`;
+  document.getElementById("colophonLeft").textContent = `Question ${n} of ${total}`;
 
   const ticks = QUESTIONS.map((_, i) =>
     `<div class="tick${i < state.index ? " done" : i === state.index ? " now" : ""}"></div>`).join("");
@@ -779,7 +779,7 @@ function choose(q, key) {
   });
   setTimeout(() => {
     if (state.index < QUESTIONS.length - 1) { state.index++; renderQuestion(); }
-    else renderResult();
+    else renderGate();
   }, 250);
 }
 
@@ -853,7 +853,7 @@ function restart() {
   state.name = ""; state.email = ""; state.mobile = ""; state.consent = false;
   state.answers = Object.create(null);
   state.index = 0;
-  renderGate();
+  renderQuestion();
 }
 
 /* --------------------------------------------------------------------- BOOT */
@@ -878,7 +878,7 @@ function fatal(message) {
   }
   if (!CONFIG.endpoint) console.warn("[questionnaire] CONFIG.endpoint is empty \u2014 responses will not be saved.");
   if (CONFIG.sharedSecret === "CHANGE_ME_BEFORE_DEPLOY") console.warn("[questionnaire] CONFIG.sharedSecret is still the placeholder.");
-  renderGate();
+  renderQuestion();
 })();
 </script>
 </body>
