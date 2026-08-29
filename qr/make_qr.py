@@ -176,7 +176,7 @@ def build_card(qr_png: Path, out: Path, url: str, logo: Path | None) -> None:
     else:
         y = centre("Fincart", y, font(72, True), INK) + 70
 
-    y = centre("Wealth Systems Audit", y, font(56, True), INK) + 26
+    y = centre("Questionnaire", y, font(56, True), INK) + 26
     y = centre("Five questions. Two minutes.", y, font(34), MUTED) + 90
 
     qr = Image.open(qr_png).convert("RGB")
