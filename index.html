@@ -12,7 +12,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231551FD'/><path d='M9 10h14l-4 4H9zM9 17h9l-3.5 5H9z' fill='white'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    DESIGN TOKENS — light, brand-blue, drafting-grid structure.
@@ -66,7 +66,8 @@ a{color:var(--brand)}
 .logo{height:26px;width:auto;display:block}
 .masthead .kicker{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
 
-.stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:clamp(26px,5.5vw,56px) 0}
+.stage{flex:1;display:flex;flex-direction:column;justify-content:flex-start;padding:clamp(18px,5.5vw,56px) 0}
+@media (min-width:640px){.stage{justify-content:center}}
 
 .colophon{border-top:1px solid var(--rule);background:var(--card)}
 .colophon .wrap{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;padding-top:15px;padding-bottom:15px}
@@ -201,6 +202,10 @@ h2{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,3.4vw,27px)
   .logo{height:22px}
   .masthead .kicker{display:none}
   .actions .btn{flex:1 1 auto}
+  h1{margin-bottom:12px}
+  .lede{margin-bottom:22px}
+  .card{padding:20px 18px}
+  .field{margin-bottom:14px}
 }
 </style>
 </head>
@@ -640,7 +645,7 @@ function renderGate() {
   $stage.innerHTML = `
     <div class="wrap enter">
       <p class="eyebrow">Wealth Systems Audit</p>
-      <h1>Your business runs on systems.<br>Does your wealth?</h1>
+      <h1>Your business runs on systems. Does your wealth?</h1>
       <p class="lede">Five questions on how your assets, advisors and succession are actually structured. You\u2019ll get a score and a read on where the gaps are, immediately.</p>
 
       <div class="card">
@@ -798,7 +803,6 @@ function renderQuestion() {
         <div class="opts" role="group" aria-label="${esc(q.dimension)} options">${opts}</div>
         ${state.index > 0 ? `<div class="actions"><button class="btn-ghost btn" id="btnBack" type="button">&larr; Back</button></div>` : ""}
       </div>
-      <div style="margin-top:26px">${structureMarkup()}</div>
       ${saveBarMarkup()}
     </div>`;
 
@@ -819,9 +823,6 @@ function choose(q, key) {
     b.classList.toggle("sel", on);
     b.setAttribute("aria-pressed", on ? "true" : "false");
   });
-  const holder = $stage.querySelector(".diagram");
-  if (holder && holder.parentElement) holder.parentElement.innerHTML = structureMarkup();
-
   setTimeout(() => {
     if (state.index < QUESTIONS.length - 1) { state.index++; renderQuestion(); }
     else renderResult();

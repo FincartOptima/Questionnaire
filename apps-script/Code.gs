@@ -24,7 +24,7 @@
  */
 
 /** Must match CONFIG.sharedSecret in index.html. CHANGE THIS. */
-var SHARED_SECRET = 'CHANGE_ME_BEFORE_DEPLOY';
+var SHARED_SECRET = 'FincartQuestionnaire';
 
 /**
  * Target spreadsheet, taken from the supplied sheet URL:

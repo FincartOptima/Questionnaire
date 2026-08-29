@@ -236,8 +236,38 @@ will give you.
 | "Not saved — Unauthorised." | The two secrets differ. Check for a trailing space. |
 | "Not saved — Network unavailable." | `endpoint` is wrong, or you used the spreadsheet URL. |
 | "Not saved — HTTP 401/403" | Deployment access is not set to **Anyone**. |
+| **"Not saved — HTTP 404"** | **The deployment doesn't exist at that URL.** See below — this is the most common failure and it is silent to a site visitor. |
 | Nothing at all under the result | `endpoint` is still `""`. |
 | Old behaviour after editing `Code.gs` | You didn't deploy a **new version**. See §1.6. |
+
+**A 404 on the `/exec` URL** means Google's own server has no deployment at
+that address — the request reached Google fine and Google said "not found."
+In order of likelihood:
+
+1. **A character was dropped or changed when the URL was copied.** The ID is
+   72 characters; one wrong character anywhere produces a URL that looks
+   completely normal and resolves to nothing. Re-copy it directly from
+   **Deploy → Manage deployments** rather than retyping it.
+2. **The deployment was deleted**, or the underlying script project was
+   deleted, after the URL was issued.
+3. **It's a test-deployment URL**, not a real one. Apps Script's "Test
+   deployments" flow (the one that runs from inside the editor while you're
+   developing) issues a different kind of URL that is not meant for
+   production traffic. Use **Deploy → New deployment**, not "Test deployments."
+
+**To confirm it yourself:** paste the URL straight into a normal browser tab.
+A working deployment returns a small JSON reply —
+`{"ok":true,"service":"wealth-systems-audit","note":"POST only."}` — because
+`doGet()` answers that way deliberately, precisely so this is checkable with
+one click. A blank Google 404 page confirms the deployment problem rather than
+a copy-paste issue on this end.
+
+The retry logic was hardened alongside this: a definitive rejection (bad
+secret, malformed payload, a 404) now fails after a single attempt instead of
+retrying four times per save. Retrying a deterministic failure doesn't help it
+succeed — it only delays the visitor's feedback and spends your Apps Script
+quota for nothing. The one case still worth retrying — `"Sheet busy. Retry."`,
+which is genuine lock contention — still gets its retries.
 
 ---
 
