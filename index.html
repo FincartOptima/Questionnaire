@@ -167,20 +167,16 @@ h2{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,3.4vw,27px)
 .score .of{font-family:var(--f-mono);font-size:14px;font-weight:400;letter-spacing:.06em;color:var(--faint);margin-left:9px;vertical-align:super}
 .band{font-family:var(--f-display);font-weight:600;font-size:clamp(22px,4.2vw,30px);letter-spacing:-.012em;margin:18px 0 8px}
 .band-note{font-size:clamp(15px,2.1vw,16.5px);color:var(--muted);max-width:46ch;margin:0 0 28px}
-.rule{border:0;border-top:1px solid var(--rule-2);margin:26px 0}
-
-.weakest{background:var(--paper);border:1px solid var(--rule);border-left:3px solid var(--brand);border-radius:6px;padding:18px 20px;margin:0}
-.weakest .lbl{font-family:var(--f-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin:0 0 7px}
-.weakest .names{font-family:var(--f-display);font-weight:600;font-size:clamp(18px,3.2vw,23px);letter-spacing:-.01em;color:var(--ink);margin:0 0 7px}
-.weakest .say{font-size:14.5px;color:var(--muted);max-width:48ch;margin:0}
 
 /* ---------- save status ---------- */
-.savebar{display:flex;align-items:center;gap:8px;margin-top:18px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.05em;color:var(--faint)}
-.savebar .dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex:0 0 auto}
-.savebar[data-state="saving"] .dot{background:#C98A1E;animation:pulse 1.1s infinite}
-.savebar[data-state="saved"] .dot{background:#2E9E6B}
-.savebar[data-state="failed"] .dot{background:var(--danger)}
-.savebar[data-state="off"]{display:none}
+.submitStatus{display:inline-flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--muted);padding:13px 4px}
+.submitStatus .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+.submitStatus[data-state="saving"] .dot{background:#C98A1E;animation:pulse 1.1s infinite}
+.submitStatus[data-state="saved"]{color:#2E9E6B}
+.submitStatus[data-state="saved"] .dot{background:#2E9E6B}
+.submitStatus[data-state="failed"]{color:var(--danger)}
+.submitStatus[data-state="failed"] .dot{background:var(--danger)}
+.submitStatus[data-state="off"]{display:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 /* ---------- motion ---------- */
@@ -495,27 +491,6 @@ function normaliseMobile(raw) {
   return { ok:true, value:d };
 }
 
-/**
- * Identifies the lowest-scoring dimension(s) — where the follow-up conversation
- * should start. Ties are all returned, in question order.
- * @param {Record<string,Option>} answers
- * @returns {{dimensions:string[], score:number}|null}
- */
-function weakestDimensions(answers) {
-  const scored = QUESTIONS
-    .map(q => ({ dimension: q.dimension, score: answers[q.id] ? answers[q.id].score : null }))
-    .filter(x => typeof x.score === "number");
-  if (scored.length === 0) return null;
-  const min = Math.min(...scored.map(x => x.score));
-  return { dimensions: scored.filter(x => x.score === min).map(x => x.dimension), score: min };
-}
-
-/** Formats a list as "A", "A and B", "A, B and C". */
-function listPhrase(items) {
-  if (items.length <= 1) return items[0] || "";
-  return items.slice(0, -1).join(", ") + " and " + items[items.length - 1];
-}
-
 /** RFC4122-ish id with a fallback for non-secure contexts. */
 function newSessionId() {
   try {
@@ -590,8 +565,7 @@ const state = {
   answers: Object.create(null),
   index: 0,
   step: "gate",
-  gateShownAt: Date.now(),
-  saveState: "idle"
+  gateShownAt: Date.now()
 };
 
 const $stage = document.getElementById("stage");
@@ -599,21 +573,6 @@ const $stage = document.getElementById("stage");
 /** Escape untrusted values before they touch innerHTML. */
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-}
-
-function setSaveState(next, detail) {
-  state.saveState = next;
-  const bar = document.getElementById("savebar");
-  if (!bar) return;
-  const label = {
-    idle: "", offline: "",
-    saving: "Saving your responses\u2026",
-    saved:  "Responses saved",
-    failed: detail ? `Not saved \u2014 ${detail} We\u2019ll still be in touch.` : "Not saved. We\u2019ll still be in touch."
-  }[next] || "";
-  bar.dataset.state = (next === "idle" || next === "offline") ? "off" : next;
-  const txt = bar.querySelector(".savetxt");
-  if (txt) txt.textContent = label;
 }
 
 function structureMarkup() {
@@ -630,9 +589,6 @@ function structureMarkup() {
   }).join("");
   return `<div class="diagram"><div class="structure">${rows}</div><div class="axis">${labels}</div></div>`;
 }
-
-const saveBarMarkup = () =>
-  `<div class="savebar" id="savebar" data-state="off"><span class="dot"></span><span class="savetxt"></span></div>`;
 
 /* ---- screen: gate ---- */
 function renderGate() {
@@ -803,13 +759,11 @@ function renderQuestion() {
         <div class="opts" role="group" aria-label="${esc(q.dimension)} options">${opts}</div>
         ${state.index > 0 ? `<div class="actions"><button class="btn-ghost btn" id="btnBack" type="button">&larr; Back</button></div>` : ""}
       </div>
-      ${saveBarMarkup()}
     </div>`;
 
   $stage.querySelectorAll(".opt").forEach(btn => btn.addEventListener("click", () => choose(q, btn.dataset.key)));
   const back = document.getElementById("btnBack");
   if (back) back.addEventListener("click", () => { state.index--; renderQuestion(); });
-  if (state.saveState !== "idle") setSaveState(state.saveState);
 }
 
 /** @param {Question} q @param {string} key */
@@ -842,28 +796,7 @@ async function renderResult() {
 
   const band = resolveBand(total);
   const { lo, hi } = scoreRange();
-  const maxPerQ = Math.max(...QUESTIONS[0].options.map(o => o.score));
   document.getElementById("colophonLeft").textContent = `${state.name} \u00b7 audit complete`;
-
-  const weak = weakestDimensions(state.answers);
-  let weakBlock = "";
-  if (weak && weak.score >= maxPerQ) {
-    weakBlock = `
-      <div class="weakest">
-        <p class="lbl">Weakest structure</p>
-        <p class="names">None</p>
-        <p class="say">Every dimension scored full marks. The next conversation is about depth, not structure.</p>
-      </div>`;
-  } else if (weak) {
-    const plural = weak.dimensions.length > 1;
-    weakBlock = `
-      <div class="weakest">
-        <p class="lbl">Weakest structure</p>
-        <p class="names">${esc(listPhrase(weak.dimensions))}</p>
-        <p class="say">${plural ? "These scored" : "This scored"} ${weak.score} of ${maxPerQ}. ${
-          plural ? "They are" : "It is"} where a gap is most likely to cost you first.</p>
-      </div>`;
-  }
 
   $stage.innerHTML = `
     <div class="wrap enter">
@@ -873,25 +806,16 @@ async function renderResult() {
         <p class="band">${esc(band.title)}</p>
         <p class="band-note">${esc(band.note)}</p>
         ${structureMarkup()}
-        <hr class="rule">
-        ${weakBlock}
         <div class="actions">
-          <button class="btn" id="btnTalk" type="button">Discuss this with an advisor <span class="arw" aria-hidden="true">&rarr;</span></button>
+          <div class="submitStatus" id="submitStatus" data-state="saving"><span class="dot"></span><span id="submitStatusText">Submitting your response\u2026</span></div>
           <button class="btn-ghost btn" id="btnRestart" type="button">Start over</button>
         </div>
-        ${saveBarMarkup()}
       </div>
       <p class="fineprint" style="margin-top:16px">Scores range from ${lo} to ${hi}. This audit is an indicative structural review, not financial advice.</p>
     </div>`;
 
   document.getElementById("btnRestart").addEventListener("click", restart);
-  document.getElementById("btnTalk").addEventListener("click", () => {
-    const b = document.getElementById("btnTalk");
-    b.disabled = true;
-    b.textContent = "We\u2019ll be in touch on \u2022\u2022\u2022\u2022\u2022\u2022" + state.mobile.slice(-4);
-  });
 
-  setSaveState("saving");
   const res = await postToSheet({
     stage: "complete",
     sessionId: state.sessionId,
@@ -908,16 +832,27 @@ async function renderResult() {
     source: (typeof location !== "undefined" ? location.hostname : "") || "unknown",
     clientTime: new Date().toISOString()
   });
-  if (res.status === "offline") setSaveState("offline");
-  else if (res.ok) setSaveState("saved");
-  else setSaveState("failed", res.detail);
+
+  const statusEl = document.getElementById("submitStatus");
+  const statusText = document.getElementById("submitStatusText");
+  if (statusEl && statusText) {
+    if (res.ok) {
+      statusEl.dataset.state = "saved";
+      statusText.textContent = "Response submitted";
+    } else if (res.status === "offline") {
+      statusEl.dataset.state = "off";
+    } else {
+      statusEl.dataset.state = "failed";
+      statusText.textContent = res.detail ? `Couldn\u2019t submit \u2014 ${res.detail}` : "Couldn\u2019t submit. We\u2019ll still be in touch.";
+    }
+  }
 }
 
 function restart() {
   state.sessionId = newSessionId();
   state.name = ""; state.email = ""; state.mobile = ""; state.consent = false;
   state.answers = Object.create(null);
-  state.index = 0; state.saveState = "idle";
+  state.index = 0;
   renderGate();
 }
 
