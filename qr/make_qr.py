@@ -154,6 +154,8 @@ def build_card(qr_png: Path, out: Path, url: str, logo: Path | None) -> None:
         for name in (
             "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans%s.ttf" % ("-Bold" if bold else ""),
+            "arialbd.ttf" if bold else "arial.ttf",
+            "C:/Windows/Fonts/arialbd.ttf" if bold else "C:/Windows/Fonts/arial.ttf",
         ):
             try:
                 return ImageFont.truetype(name, size)
@@ -176,7 +178,7 @@ def build_card(qr_png: Path, out: Path, url: str, logo: Path | None) -> None:
     else:
         y = centre("Fincart", y, font(72, True), INK) + 70
 
-    y = centre("Questionnaire", y, font(56, True), INK) + 26
+    y = centre("Questionnaire", y, font(84, True), INK) + 30
     y = centre("Five questions. Two minutes.", y, font(34), MUTED) + 90
 
     qr = Image.open(qr_png).convert("RGB")
@@ -192,7 +194,7 @@ def build_card(qr_png: Path, out: Path, url: str, logo: Path | None) -> None:
 
     y = centre("Scan to begin", y, font(40, True), BRAND_BLUE) + 22
     display = url if len(url) <= 52 else url[:49] + "..."
-    centre(display, y, font(26), MUTED)
+    centre(display, y, font(38), MUTED)
 
     card.save(out, "PNG", optimize=True)
 
